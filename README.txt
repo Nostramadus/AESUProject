@@ -3,7 +3,7 @@ Welcome to AES-Utility,
 this is a C# service that allows you to encrypt and decrypt messages according to AES.
 To use this program you have execute it from the windows commandline.
 Step 1a: Open a command prompt (In Windows 7: open the Start Menu and type "cmd") and navigate to the folder:
-	AESU\AESU\bin\Debug  once you navigate here you can proceed with Step 2
+	[...]\AESU\bin\Debug  once you navigate here you can proceed with Step 2
 Step 1b: Shift+Right click on the "Debug"-folder in your Windows-Explorer and click on "Open Command Window here"
 
 Step 2: type in the command specified on what you want the program to do:
