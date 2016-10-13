@@ -20,9 +20,10 @@ namespace AESU
             string inputPath;
             string outputPath;
             bool ivProvided;
-            //needed for CTR
-            string msg;
-            string msgHelp = null;
+
+            // help variables only needed for CTR
+            string encrIV;
+            string ciphertext = null;
             string plaintext;
 
             // checking for encryption and decryption
@@ -30,18 +31,18 @@ namespace AESU
             {
                 case "-e":
                     coding = args[0];
-                    Console.WriteLine("En-/Decoding ok.");
+                    Console.WriteLine("Encoding ok.");
                     break;
                 case "-d":
                     coding = args[0];
-                    Console.WriteLine("En-/Decoding ok.");
+                    Console.WriteLine("Decoding ok.");
                     break;
                 default:
                     Console.WriteLine("ERROR: Please enter -e or -d for encryption or decryption nothing else (Check the Syntax in the README)");
                     return;
             }
-            Console.WriteLine(args[2].Length);
-            //checking if the correct keylenghth is provided
+
+            //checking if the correct keylength is provided
             if (args[2].Length != 32 && args[2].Length != 48 && args[2].Length != 64)
             {
                 Console.WriteLine("key length not supported. (Check the Syntax in the README)");
@@ -108,23 +109,23 @@ namespace AESU
                 return;
             }
 
-            //Checking the mode
+            //Checking which mode is called
             switch (mode)
             {
                 case "ecb":
-                    Console.WriteLine("The mode is ok, its ecb");
+                    Console.WriteLine("The mode is ok, it's ecb");
                     break;
                 case "cbc":
-                    Console.WriteLine("The mode is ok, its cbc");
+                    Console.WriteLine("The mode is ok, it's cbc");
                     break;
                 case "cfb":
-                    Console.WriteLine("The mode is ok, its cfb");
+                    Console.WriteLine("The mode is ok, it's cfb");
                     break;
                 case "ofb":
-                    Console.WriteLine("The mode is ok, its ofb");
+                    Console.WriteLine("The mode is ok, it's ofb");
                     break;
                 case "ctr":
-                    Console.WriteLine("The mode is ok, its ctr");
+                    Console.WriteLine("The mode is ok, it's ctr");
                     break;
                 default:
                     Console.WriteLine("ERROR: Please enter a mode for encryption or decryption (Check the Syntax in the README)");
@@ -135,6 +136,7 @@ namespace AESU
             {
                 if (!ivProvided)
                 {
+                    // process to do the encryption through Openssl
                     Process process = new Process();
                     process.StartInfo.FileName = "openssl";
                     process.StartInfo.Arguments = " enc " + "-aes-" + (key.Length * 4) + "-" + mode + " " + coding + " " + " -K " + key + " -v -nosalt " + " " +
@@ -146,8 +148,10 @@ namespace AESU
                     process.WaitForExit();
                     process.Close();
                 }
+                    //only if the initial Vector is provided
                 else
                 {
+                    // process to do the encryption through Openssl
                     Process process = new Process();
                     process.StartInfo.FileName = "openssl";
                     process.StartInfo.Arguments = " enc " + "-aes-" + (key.Length * 4) + "-" + mode + " " + coding + " " + " -K " + key + " -iv "+ iv +" -v -nosalt " +
@@ -160,26 +164,40 @@ namespace AESU
                     process.Close();
                 }
             }
+            // only when the mode is ctr
             else
             {
 
+                // Creating a help file
+                writing("a"+outputPath, iv);
+
+                // reading the plaintext in a variable
+                plaintext = reading(inputPath);
+
+                // process to do the encryption through Openssl
                 Process process = new Process();
                 process.StartInfo.FileName = "openssl";
-                process.StartInfo.Arguments = " enc " + "-aes-" + (key.Length * 4) + "-ecb -e -K " + key + " -iv " + iv +" -v -nosalt " + " " +
-                    args[7] + " " + inputPath + " " + args[9] + " " + outputPath;
-                plaintext = reading(inputPath);
+                process.StartInfo.Arguments = " enc " + "-aes-" + (key.Length * 4) + "-ecb -e -K " + key +" -v -nopad -nosalt " + " " +
+                    args[7] + " " + "a"+outputPath + " " + args[9] + " " + outputPath;
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.Start();
                 process.WaitForExit();
                 process.Close();
-                msg = reading(outputPath);
-                for (int i = 0; i < msg.Length; i++)
-                {
-                    msgHelp += (byte)(msg[i] ^ plaintext[i]);
-                }
-                writing(outputPath, msgHelp);
 
+                // read the encrypted Initial Vector in the variable
+                encrIV = reading(outputPath);
+
+                // XOR the encrypted IV with the plaintext to get the ciphertext
+                for (int i = 0; i < plaintext.Length; i++)
+                {
+                    ciphertext += (char)(encrIV[i % encrIV.Length] ^ plaintext[i]);
+                }
+                //writing the ciphertext to the outputphile
+                writing(outputPath, ciphertext);
+
+                //deleting the help file
+                File.Delete("a" + outputPath);
             }
 
 
@@ -190,7 +208,6 @@ namespace AESU
 
 
         // Reading the text from the textdocument provided, returning the conent as string
-        // convert the string to its hexcode??
         public static string reading(string path)
         {
             string msg = "";
@@ -241,6 +258,5 @@ namespace AESU
                 }
             }
         }
-
     }
 }
